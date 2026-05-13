@@ -9,18 +9,17 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Read raw body and parse it ourselves
-    let body;
+    // Parse body safely
+    let parsed;
     if (typeof req.body === 'object' && req.body !== null) {
-      body = JSON.stringify(req.body);
-    } else if (typeof req.body === 'string' && req.body.length > 0) {
-      body = req.body;
-      // Validate it's valid JSON
-      JSON.parse(body);
+      parsed = req.body;
+    } else if (typeof req.body === 'string') {
+      parsed = JSON.parse(req.body);
     } else {
-      return res.status(400).json({ error: 'Empty or invalid request body', received: typeof req.body });
+      return res.status(400).json({ error: 'Invalid body', type: typeof req.body });
     }
 
+    // Forward to Anthropic
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -28,22 +27,15 @@ export default async function handler(req, res) {
         'x-api-key': apiKey,
         'anthropic-version': '2023-06-01',
       },
-      body: body,
+      body: JSON.stringify(parsed),
     });
 
     const text = await response.text();
+    console.log('Status:', response.status, 'Body:', text.slice(0, 300));
 
-    // Log for debugging
-    console.log('Anthropic status:', response.status);
-    console.log('Anthropic response:', text.slice(0, 500));
-
-    try {
-      return res.status(response.status).json(JSON.parse(text));
-    } catch {
-      return res.status(response.status).send(text);
-    }
+    return res.status(response.status).json(JSON.parse(text));
   } catch (error) {
-    console.error('Handler error:', error);
-    return res.status(500).json({ error: error.message, stack: error.stack });
+    console.error('Error:', error.message);
+    return res.status(500).json({ error: error.message });
   }
 }

@@ -9,7 +9,6 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Parse body safely
     let parsed;
     if (typeof req.body === 'object' && req.body !== null) {
       parsed = req.body;
@@ -19,7 +18,9 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Invalid body', type: typeof req.body });
     }
 
-    // Forward to Anthropic
+    // Use a publicly available model
+    parsed.model = 'claude-3-5-haiku-20241022';
+
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {

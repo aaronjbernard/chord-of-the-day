@@ -440,12 +440,12 @@ export default function App(){
       const[pRes,iRes]=await Promise.all([
         fetch("/api/anthropic",{method:"POST",
           headers:{"Content-Type":"application/json"},
-          body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,
+          body:JSON.stringify({model:"claude-3-5-haiku-20241022",max_tokens:1000,
             system:"You are a music theory expert. Return ONLY valid JSON, no markdown.",
             messages:[{role:"user",content:`For the chord "${chord.note} ${chord.type}", generate exactly 3 chord progressions featuring it (different feels: jazz, pop, cinematic, blues, etc).\nReturn ONLY: {"progressions":[{"name":"style name","chords":[{"name":"chord name like Cmaj7 Am7 F G","numeral":"Roman numeral e.g. I ii IV V7 bVII","featured":true or false}],"description":"1 sentence"}]}`}]})}),
         fetch("/api/anthropic",{method:"POST",
           headers:{"Content-Type":"application/json"},
-          body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:400,
+          body:JSON.stringify({model:"claude-3-5-haiku-20241022",max_tokens:400,
             system:"You are a music theory expert. Return ONLY valid JSON, no markdown.",
             messages:[{role:"user",content:`For "${chord.note} ${chord.type}" return ONLY: {"character":"evocative 1-sentence sound description","notes":["C","E","G"],"tip":"1 beginner tip"}`}]})}),
       ]);

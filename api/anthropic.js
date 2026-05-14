@@ -19,7 +19,7 @@ export default async function handler(req, res) {
     }
 
     // Force override the model to one that's available
-    parsed.model = 'claude-3-5-haiku-20241022';
+    parsed.model = 'claude-haiku-4-5-20251001';
 
     console.log('Sending model:', parsed.model);
 

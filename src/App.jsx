@@ -1,3 +1,4 @@
+// v2
 import { useState, useEffect, useRef, useCallback } from "react";
 
 const NOTES = ["C","C#","D","Eb","E","F","F#","G","Ab","A","Bb","B"];

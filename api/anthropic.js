@@ -15,11 +15,13 @@ export default async function handler(req, res) {
     } else if (typeof req.body === 'string') {
       parsed = JSON.parse(req.body);
     } else {
-      return res.status(400).json({ error: 'Invalid body', type: typeof req.body });
+      return res.status(400).json({ error: 'Invalid body' });
     }
 
-    // Use a publicly available model
+    // Force override the model to one that's available
     parsed.model = 'claude-3-5-haiku-20241022';
+
+    console.log('Sending model:', parsed.model);
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -32,7 +34,8 @@ export default async function handler(req, res) {
     });
 
     const text = await response.text();
-    console.log('Status:', response.status, 'Body:', text.slice(0, 300));
+    console.log('Anthropic status:', response.status);
+    console.log('Anthropic response:', text.slice(0, 500));
 
     return res.status(response.status).json(JSON.parse(text));
   } catch (error) {

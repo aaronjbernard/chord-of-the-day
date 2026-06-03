@@ -273,7 +273,7 @@ function PianoKeyboard({ highlightedNotes }) {
           Click a highlighted key to hear it
         </div>
       )}
-      <div style={{position:"relative", width:"100%", height:120, display:"flex"}}>
+      <div style={{position:"relative", width:"100%", maxWidth: `${numWhite * 52}px`, height:120, display:"flex"}}>
 
         {/* White keys */}
         {(() => {

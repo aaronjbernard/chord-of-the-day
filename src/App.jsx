@@ -204,23 +204,35 @@ function getLast30Days() {
 
 // ─── Keyboard ─────────────────────────────────────────────────────────────────
 
-// C3 through F4 — one physical key per pitch
-const WHITE_KEY_DEFS = [
+// 11 white keys: C3 D3 E3 F3 G3 A3 B3 C4 D4 E4 F4
+// Black keys defined by their left-offset as a fraction of total white key width.
+// Using percentage-based layout so it scales correctly on all screen sizes.
+const WHITE_KEYS = [
   {note:"C",oct:3},{note:"D",oct:3},{note:"E",oct:3},{note:"F",oct:3},
   {note:"G",oct:3},{note:"A",oct:3},{note:"B",oct:3},
   {note:"C",oct:4},{note:"D",oct:4},{note:"E",oct:4},{note:"F",oct:4},
 ];
-const BLACK_KEY_DEFS = [
-  {note:"C#",oct:3,pos:0},{note:"Eb",oct:3,pos:1},
-  {note:"F#",oct:3,pos:3},{note:"Ab",oct:3,pos:4},{note:"Bb",oct:3,pos:5},
-  {note:"C#",oct:4,pos:7},{note:"Eb",oct:4,pos:8},{note:"F#",oct:4,pos:10},
+
+// leftPct = left edge of black key as % of total keyboard width
+// Each white key = 100/11 ≈ 9.09%. Black keys sit at ~65% of the way through their white key.
+const WK = 100 / 11;
+const BLACK_KEYS = [
+  {note:"C#", oct:3, leftPct: WK*0 + WK*0.65},
+  {note:"Eb",  oct:3, leftPct: WK*1 + WK*0.65},
+  {note:"F#", oct:3, leftPct: WK*3 + WK*0.65},
+  {note:"Ab",  oct:3, leftPct: WK*4 + WK*0.65},
+  {note:"Bb",  oct:3, leftPct: WK*5 + WK*0.65},
+  {note:"C#", oct:4, leftPct: WK*7 + WK*0.65},
+  {note:"Eb",  oct:4, leftPct: WK*8 + WK*0.65},
+  {note:"F#", oct:4, leftPct: WK*10 + WK*0.65},
 ];
 
 function PianoKeyboard({ highlightedNotes }) {
   const [pressing, setPressing] = useState(null);
-  // Dedupe: only highlight each note name once (first occurrence on keyboard wins)
-  const highlightedOnce = [];
+
+  // Dedupe highlights — each pitch only highlighted once
   const seenHL = new Set();
+  const highlightedOnce = [];
   for (const n of highlightedNotes) {
     if (!seenHL.has(n)) { seenHL.add(n); highlightedOnce.push(n); }
   }
@@ -228,46 +240,9 @@ function PianoKeyboard({ highlightedNotes }) {
 
   const handleClick = (note, oct) => {
     if (!isH(note)) return;
-    const id = `${note}-${oct}`;
-    setPressing(id);
+    setPressing(`${note}-${oct}`);
     playFreqs([noteFreqOct(note, oct)], "together");
     setTimeout(() => setPressing(null), 300);
-  };
-
-  const wStyle = (note, oct) => {
-    const h = isH(note), pr = pressing === `${note}-${oct}`;
-    return {
-      width: 36, height: 120, border: "1px solid #c4a882", borderRadius: "0 0 6px 6px",
-      background: pr ? "linear-gradient(180deg,#e8b800,#d09000)"
-        : h ? "linear-gradient(180deg,#f5c842,#e8a800)"
-        : "linear-gradient(180deg,#fdf8f0,#f0e8d8)",
-      boxShadow: h ? "0 4px 12px rgba(245,200,66,0.6),inset 0 -2px 4px rgba(0,0,0,0.1)"
-        : "inset 0 -2px 4px rgba(0,0,0,0.08)",
-      display: "flex", alignItems: "flex-end", justifyContent: "center", paddingBottom: 6,
-      fontSize: 9, fontFamily: "'Cormorant Garamond',serif",
-      color: h ? "#5a3800" : "#a0875c", fontWeight: 600,
-      cursor: h ? "pointer" : "default",
-      transition: "background 0.1s, transform 0.08s",
-      transform: pr ? "scaleY(0.97) translateY(2px)" : "none",
-      zIndex: 1, marginRight: 1, userSelect: "none",
-    };
-  };
-  const bStyle = (note, oct) => {
-    const h = isH(note), pr = pressing === `${note}-${oct}`;
-    return {
-      position: "absolute", width: 22, height: 72, borderRadius: "0 0 4px 4px", zIndex: 2,
-      background: pr ? "linear-gradient(180deg,#e8a800,#c07000)"
-        : h ? "linear-gradient(180deg,#c8930a,#a07000)"
-        : "linear-gradient(180deg,#2a1f14,#1a1008)",
-      boxShadow: h ? "0 2px 8px rgba(200,147,10,0.7)" : "0 3px 6px rgba(0,0,0,0.5)",
-      display: "flex", alignItems: "flex-end", justifyContent: "center", paddingBottom: 4,
-      fontSize: 7, fontFamily: "'Cormorant Garamond',serif",
-      color: h ? "#fff8e0" : "#6b5a3e",
-      cursor: h ? "pointer" : "default",
-      transition: "background 0.1s, transform 0.08s",
-      transform: pr ? "scaleY(0.95) translateY(2px)" : "none",
-      userSelect: "none",
-    };
   };
 
   return (
@@ -277,19 +252,74 @@ function PianoKeyboard({ highlightedNotes }) {
           Click a highlighted key to hear it
         </div>
       )}
-      <div style={{position:"relative",display:"flex",height:120}}>
-        {WHITE_KEY_DEFS.map(({note,oct},i) => (
-          <div key={`w${note}${oct}${i}`} style={wStyle(note,oct)} onClick={() => handleClick(note,oct)}>
-            {isH(note) ? note : ""}
-          </div>
-        ))}
-        {BLACK_KEY_DEFS.map(({note,oct,pos},i) => (
-          <div key={`b${note}${oct}${i}`}
-            style={{...bStyle(note,oct), left: pos*37+24, top: 0}}
-            onClick={() => handleClick(note,oct)}>
-            {isH(note) ? note : ""}
-          </div>
-        ))}
+      {/* Keyboard container — relative so black keys can be absolutely positioned */}
+      <div style={{position:"relative", width:"100%", height:120, display:"flex"}}>
+
+        {/* White keys — each takes equal share of total width */}
+        {WHITE_KEYS.map(({note,oct},i) => {
+          const h = isH(note), pr = pressing === `${note}-${oct}`;
+          return (
+            <div key={`w${note}${oct}${i}`}
+              onClick={() => handleClick(note,oct)}
+              style={{
+                flex: 1, height: "100%",
+                border: "1px solid #c4a882",
+                borderRadius: "0 0 6px 6px",
+                background: pr ? "linear-gradient(180deg,#e8b800,#d09000)"
+                  : h ? "linear-gradient(180deg,#f5c842,#e8a800)"
+                  : "linear-gradient(180deg,#fdf8f0,#f0e8d8)",
+                boxShadow: h
+                  ? "0 4px 12px rgba(245,200,66,0.6),inset 0 -2px 4px rgba(0,0,0,0.1)"
+                  : "inset 0 -2px 4px rgba(0,0,0,0.08)",
+                display: "flex", alignItems: "flex-end", justifyContent: "center",
+                paddingBottom: 6,
+                fontSize: 9, fontFamily: "'Cormorant Garamond',serif",
+                color: h ? "#5a3800" : "#a0875c", fontWeight: 600,
+                cursor: h ? "pointer" : "default",
+                transition: "background 0.1s",
+                zIndex: 1, userSelect: "none",
+                WebkitTapHighlightColor: "transparent",
+              }}>
+              {h ? note : ""}
+            </div>
+          );
+        })}
+
+        {/* Black keys — absolutely positioned by percentage */}
+        {BLACK_KEYS.map(({note,oct,leftPct},i) => {
+          const h = isH(note), pr = pressing === `${note}-${oct}`;
+          // Black key width = 60% of one white key width
+          const bwPct = WK * 0.6;
+          return (
+            <div key={`b${note}${oct}${i}`}
+              onClick={() => handleClick(note,oct)}
+              style={{
+                position: "absolute",
+                left: `${leftPct}%`,
+                top: 0,
+                width: `${bwPct}%`,
+                height: "60%",
+                borderRadius: "0 0 4px 4px",
+                zIndex: 2,
+                background: pr ? "linear-gradient(180deg,#e8a800,#c07000)"
+                  : h ? "linear-gradient(180deg,#c8930a,#a07000)"
+                  : "linear-gradient(180deg,#2a1f14,#1a1008)",
+                boxShadow: h
+                  ? "0 2px 8px rgba(200,147,10,0.7)"
+                  : "0 3px 6px rgba(0,0,0,0.5)",
+                display: "flex", alignItems: "flex-end", justifyContent: "center",
+                paddingBottom: 4,
+                fontSize: 7, fontFamily: "'Cormorant Garamond',serif",
+                color: h ? "#fff8e0" : "#6b5a3e",
+                cursor: h ? "pointer" : "default",
+                transition: "background 0.1s",
+                userSelect: "none",
+                WebkitTapHighlightColor: "transparent",
+              }}>
+              {h ? note : ""}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

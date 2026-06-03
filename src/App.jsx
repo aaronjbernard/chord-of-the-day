@@ -256,70 +256,79 @@ function PianoKeyboard({ highlightedNotes }) {
       <div style={{position:"relative", width:"100%", height:120, display:"flex"}}>
 
         {/* White keys — each takes equal share of total width */}
-        {WHITE_KEYS.map(({note,oct},i) => {
-          const h = isH(note), pr = pressing === `${note}-${oct}`;
-          return (
-            <div key={`w${note}${oct}${i}`}
-              onClick={() => handleClick(note,oct)}
-              style={{
-                flex: 1, height: "100%",
-                border: "1px solid #c4a882",
-                borderRadius: "0 0 6px 6px",
-                background: pr ? "linear-gradient(180deg,#e8b800,#d09000)"
-                  : h ? "linear-gradient(180deg,#f5c842,#e8a800)"
-                  : "linear-gradient(180deg,#fdf8f0,#f0e8d8)",
-                boxShadow: h
-                  ? "0 4px 12px rgba(245,200,66,0.6),inset 0 -2px 4px rgba(0,0,0,0.1)"
-                  : "inset 0 -2px 4px rgba(0,0,0,0.08)",
-                display: "flex", alignItems: "flex-end", justifyContent: "center",
-                paddingBottom: 6,
-                fontSize: 9, fontFamily: "'Cormorant Garamond',serif",
-                color: h ? "#5a3800" : "#a0875c", fontWeight: 600,
-                cursor: h ? "pointer" : "default",
-                transition: "background 0.1s",
-                zIndex: 1, userSelect: "none",
-                WebkitTapHighlightColor: "transparent",
-              }}>
-              {h ? note : ""}
-            </div>
-          );
-        })}
+        {(() => {
+          const rendered = new Set();
+          return WHITE_KEYS.map(({note,oct},i) => {
+            const h = isH(note) && !rendered.has(note);
+            if (h) rendered.add(note);
+            const pr = pressing === `${note}-${oct}`;
+            return (
+              <div key={`w${note}${oct}${i}`}
+                onClick={() => handleClick(note,oct)}
+                style={{
+                  flex: 1, height: "100%",
+                  border: "1px solid #c4a882",
+                  borderRadius: "0 0 6px 6px",
+                  background: pr ? "linear-gradient(180deg,#e8b800,#d09000)"
+                    : h ? "linear-gradient(180deg,#f5c842,#e8a800)"
+                    : "linear-gradient(180deg,#fdf8f0,#f0e8d8)",
+                  boxShadow: h
+                    ? "0 4px 12px rgba(245,200,66,0.6),inset 0 -2px 4px rgba(0,0,0,0.1)"
+                    : "inset 0 -2px 4px rgba(0,0,0,0.08)",
+                  display: "flex", alignItems: "flex-end", justifyContent: "center",
+                  paddingBottom: 6,
+                  fontSize: 9, fontFamily: "'Cormorant Garamond',serif",
+                  color: h ? "#5a3800" : "#a0875c", fontWeight: 600,
+                  cursor: h ? "pointer" : "default",
+                  transition: "background 0.1s",
+                  zIndex: 1, userSelect: "none",
+                  WebkitTapHighlightColor: "transparent",
+                }}>
+                {h ? note : ""}
+              </div>
+            );
+          });
+        })()}
 
         {/* Black keys — absolutely positioned by percentage */}
-        {BLACK_KEYS.map(({note,oct,leftPct},i) => {
-          const h = isH(note), pr = pressing === `${note}-${oct}`;
-          // Black key width = 60% of one white key width
-          const bwPct = WK * 0.6;
-          return (
-            <div key={`b${note}${oct}${i}`}
-              onClick={() => handleClick(note,oct)}
-              style={{
-                position: "absolute",
-                left: `${leftPct}%`,
-                top: 0,
-                width: `${bwPct}%`,
-                height: "60%",
-                borderRadius: "0 0 4px 4px",
-                zIndex: 2,
-                background: pr ? "linear-gradient(180deg,#e8a800,#c07000)"
-                  : h ? "linear-gradient(180deg,#c8930a,#a07000)"
-                  : "linear-gradient(180deg,#2a1f14,#1a1008)",
-                boxShadow: h
-                  ? "0 2px 8px rgba(200,147,10,0.7)"
-                  : "0 3px 6px rgba(0,0,0,0.5)",
-                display: "flex", alignItems: "flex-end", justifyContent: "center",
-                paddingBottom: 4,
-                fontSize: 7, fontFamily: "'Cormorant Garamond',serif",
-                color: h ? "#fff8e0" : "#6b5a3e",
-                cursor: h ? "pointer" : "default",
-                transition: "background 0.1s",
-                userSelect: "none",
-                WebkitTapHighlightColor: "transparent",
-              }}>
-              {h ? note : ""}
-            </div>
-          );
-        })}
+        {(() => {
+          const rendered = new Set();
+          return BLACK_KEYS.map(({note,oct,leftPct},i) => {
+            const h = isH(note) && !rendered.has(note);
+            if (h) rendered.add(note);
+            const pr = pressing === `${note}-${oct}`;
+            const bwPct = WK * 0.6;
+            return (
+              <div key={`b${note}${oct}${i}`}
+                onClick={() => handleClick(note,oct)}
+                style={{
+                  position: "absolute",
+                  left: `${leftPct}%`,
+                  top: 0,
+                  width: `${bwPct}%`,
+                  height: "60%",
+                  borderRadius: "0 0 4px 4px",
+                  zIndex: 2,
+                  background: pr ? "linear-gradient(180deg,#e8a800,#c07000)"
+                    : h ? "linear-gradient(180deg,#c8930a,#a07000)"
+                    : "linear-gradient(180deg,#2a1f14,#1a1008)",
+                  boxShadow: h
+                    ? "0 2px 8px rgba(200,147,10,0.7)"
+                    : "0 3px 6px rgba(0,0,0,0.5)",
+                  display: "flex", alignItems: "flex-end", justifyContent: "center",
+                  paddingBottom: 4,
+                  fontSize: 7, fontFamily: "'Cormorant Garamond',serif",
+                  color: h ? "#fff8e0" : "#6b5a3e",
+                  cursor: h ? "pointer" : "default",
+                  transition: "background 0.1s",
+                  userSelect: "none",
+                  WebkitTapHighlightColor: "transparent",
+                }}>
+                {h ? note : ""}
+              </div>
+            );
+          });
+        })()}
       </div>
     </div>
   );

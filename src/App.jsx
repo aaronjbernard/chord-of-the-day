@@ -142,11 +142,24 @@ function playFreqs(freqs, style = "together") {
   } catch(e) { console.warn("audio", e); }
 }
 
-// Play chord notes anchored to C3, stacking intervals from root
+// Play chord notes anchored to a consistent mid-range pitch.
+// Picks the octave that keeps the root closest to ~150 Hz (between C3 and D3)
+// so chords with high-semitone roots (e.g. Bb, B) don't sound too bright.
 function playChord(notes, style, rootNote) {
   const rootSemi = SEMITONE_MAP[rootNote] ?? 0;
-  const rootFreq = noteFreqOct(rootNote, 3);
-  // Dedupe frequencies so same-pitch notes don't stack
+
+  // Find the octave that puts the root nearest to our target frequency
+  const TARGET = 150;
+  let bestOct = 2;
+  let bestDiff = Infinity;
+  for (const oct of [2, 3]) {
+    const f = noteFreqOct(rootNote, oct);
+    const diff = Math.abs(f - TARGET);
+    if (diff < bestDiff) { bestDiff = diff; bestOct = oct; }
+  }
+  const rootFreq = noteFreqOct(rootNote, bestOct);
+
+  // Dedupe frequencies
   const seen = new Set();
   const freqs = [];
   for (const n of notes) {

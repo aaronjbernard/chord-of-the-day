@@ -204,39 +204,60 @@ function getLast30Days() {
 
 // ─── Keyboard ─────────────────────────────────────────────────────────────────
 
-// 11 white keys: C3 D3 E3 F3 G3 A3 B3 C4 D4 E4 F4
-// Black keys defined by their left-offset as a fraction of total white key width.
-// Using percentage-based layout so it scales correctly on all screen sizes.
-const WHITE_KEYS = [
+// Full two-octave pool to slice from
+const ALL_WHITE_KEYS = [
   {note:"C",oct:3},{note:"D",oct:3},{note:"E",oct:3},{note:"F",oct:3},
   {note:"G",oct:3},{note:"A",oct:3},{note:"B",oct:3},
   {note:"C",oct:4},{note:"D",oct:4},{note:"E",oct:4},{note:"F",oct:4},
+  {note:"G",oct:4},{note:"A",oct:4},{note:"B",oct:4},
+];
+// All black keys in that range with their white-key neighbour index
+const ALL_BLACK_KEYS = [
+  {note:"C#",oct:3,wIdx:0},{note:"Eb",oct:3,wIdx:1},
+  {note:"F#",oct:3,wIdx:3},{note:"Ab",oct:3,wIdx:4},{note:"Bb",oct:3,wIdx:5},
+  {note:"C#",oct:4,wIdx:7},{note:"Eb",oct:4,wIdx:8},
+  {note:"F#",oct:4,wIdx:10},{note:"Ab",oct:4,wIdx:11},{note:"Bb",oct:4,wIdx:12},
 ];
 
-// leftPct = left edge of black key as % of total keyboard width
-// Each white key = 100/11 ≈ 9.09%. Black keys sit at ~65% of the way through their white key.
-const WK = 100 / 11;
-const BLACK_KEYS = [
-  {note:"C#", oct:3, leftPct: WK*0 + WK*0.65},
-  {note:"Eb",  oct:3, leftPct: WK*1 + WK*0.65},
-  {note:"F#", oct:3, leftPct: WK*3 + WK*0.65},
-  {note:"Ab",  oct:3, leftPct: WK*4 + WK*0.65},
-  {note:"Bb",  oct:3, leftPct: WK*5 + WK*0.65},
-  {note:"C#", oct:4, leftPct: WK*7 + WK*0.65},
-  {note:"Eb",  oct:4, leftPct: WK*8 + WK*0.65},
-  {note:"F#", oct:4, leftPct: WK*10 + WK*0.65},
-];
+function buildKeyboardSlice(highlightedNotes) {
+  // Find which white-key indices are needed for the highlighted notes
+  const needed = new Set();
+  for (const n of highlightedNotes) {
+    // White note
+    const wi = ALL_WHITE_KEYS.findIndex(k => k.note === n);
+    if (wi !== -1) { needed.add(wi); continue; }
+    // Black note — add its left white-key neighbour
+    const bk = ALL_BLACK_KEYS.find(k => k.note === n);
+    if (bk) needed.add(bk.wIdx);
+  }
+  if (needed.size === 0) return { whites: ALL_WHITE_KEYS.slice(0,7), blacks: ALL_BLACK_KEYS.filter(b=>b.wIdx<7) };
+
+  const minIdx = Math.max(0, Math.min(...needed) - 1);
+  const maxIdx = Math.min(ALL_WHITE_KEYS.length - 1, Math.max(...needed) + 1);
+
+  const whites = ALL_WHITE_KEYS.slice(minIdx, maxIdx + 1);
+  // Re-index black keys relative to the slice
+  const blacks = ALL_BLACK_KEYS
+    .filter(b => b.wIdx >= minIdx && b.wIdx <= maxIdx)
+    .map(b => ({ ...b, sliceIdx: b.wIdx - minIdx }));
+
+  return { whites, blacks };
+}
 
 function PianoKeyboard({ highlightedNotes }) {
   const [pressing, setPressing] = useState(null);
 
-  // Dedupe highlights — each pitch only highlighted once
+  // Dedupe highlights
   const seenHL = new Set();
   const highlightedOnce = [];
   for (const n of highlightedNotes) {
     if (!seenHL.has(n)) { seenHL.add(n); highlightedOnce.push(n); }
   }
   const isH = note => highlightedOnce.includes(note);
+
+  const { whites, blacks } = buildKeyboardSlice(highlightedOnce);
+  const numWhite = whites.length;
+  const WKpct = 100 / numWhite;
 
   const handleClick = (note, oct) => {
     if (!isH(note)) return;
@@ -252,13 +273,12 @@ function PianoKeyboard({ highlightedNotes }) {
           Click a highlighted key to hear it
         </div>
       )}
-      {/* Keyboard container — relative so black keys can be absolutely positioned */}
       <div style={{position:"relative", width:"100%", height:120, display:"flex"}}>
 
-        {/* White keys — each takes equal share of total width */}
+        {/* White keys */}
         {(() => {
           const rendered = new Set();
-          return WHITE_KEYS.map(({note,oct},i) => {
+          return whites.map(({note,oct},i) => {
             const h = isH(note) && !rendered.has(note);
             if (h) rendered.add(note);
             const pr = pressing === `${note}-${oct}`;
@@ -290,14 +310,15 @@ function PianoKeyboard({ highlightedNotes }) {
           });
         })()}
 
-        {/* Black keys — absolutely positioned by percentage */}
+        {/* Black keys */}
         {(() => {
           const rendered = new Set();
-          return BLACK_KEYS.map(({note,oct,leftPct},i) => {
+          return blacks.map(({note,oct,sliceIdx},i) => {
             const h = isH(note) && !rendered.has(note);
             if (h) rendered.add(note);
             const pr = pressing === `${note}-${oct}`;
-            const bwPct = WK * 0.6;
+            const leftPct = sliceIdx * WKpct + WKpct * 0.65;
+            const bwPct = WKpct * 0.6;
             return (
               <div key={`b${note}${oct}${i}`}
                 onClick={() => handleClick(note,oct)}
@@ -312,9 +333,7 @@ function PianoKeyboard({ highlightedNotes }) {
                   background: pr ? "linear-gradient(180deg,#e8a800,#c07000)"
                     : h ? "linear-gradient(180deg,#c8930a,#a07000)"
                     : "linear-gradient(180deg,#2a1f14,#1a1008)",
-                  boxShadow: h
-                    ? "0 2px 8px rgba(200,147,10,0.7)"
-                    : "0 3px 6px rgba(0,0,0,0.5)",
+                  boxShadow: h ? "0 2px 8px rgba(200,147,10,0.7)" : "0 3px 6px rgba(0,0,0,0.5)",
                   display: "flex", alignItems: "flex-end", justifyContent: "center",
                   paddingBottom: 4,
                   fontSize: 7, fontFamily: "'Cormorant Garamond',serif",

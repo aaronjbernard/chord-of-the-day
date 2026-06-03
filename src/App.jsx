@@ -629,7 +629,7 @@ export default function App() {
     setLoading(true); setInfoLoading(true);
     try {
       const [pRes, iRes] = await Promise.all([
-        fetch("https://api.anthropic.com/v1/messages", {
+        fetch("/api/anthropic", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -640,7 +640,7 @@ export default function App() {
             }],
           }),
         }),
-        fetch("https://api.anthropic.com/v1/messages", {
+        fetch("/api/anthropic", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
